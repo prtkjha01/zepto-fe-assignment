@@ -1,118 +1,174 @@
-import Image from 'next/image'
-import { Inter } from 'next/font/google'
+import Head from "next/head";
+import { Inter } from "next/font/google";
+import { useEffect, useState } from "react";
+import { recommendations } from "../types/recommendations";
+import recommendationData from "../constants/constants";
+const inter = Inter({ subsets: ["latin"] });
 
-const inter = Inter({ subsets: ['latin'] })
+const Home = () => {
+  const [showList, setShowList] = useState<boolean>(false);
+  const [nameInput, setNameInput] = useState<string>("");
+  const [bkspCount, setBkspCount] = useState<number>(0);
+  const [chips, setChips] = useState<recommendations[]>([]);
+  const [recommendations, setRecommendations] =
+    useState<recommendations[]>(recommendationData);
 
-export default function Home() {
+  const filteredRecommendations = recommendations.filter((rec) =>
+    rec.name.toLowerCase().includes(nameInput.toLowerCase())
+  );
+
+  useEffect(() => {
+    // console.log(bkspCount);
+
+    let newChips = [...chips];
+    if (bkspCount == 1 && chips.length && !nameInput.length) {
+      newChips[newChips.length - 1].isHighlighted = true;
+
+      setChips(newChips);
+    }
+
+    if (bkspCount == 2 && chips.length && !nameInput.length) {
+      setRecommendations([
+        ...recommendations,
+        { ...newChips[newChips.length - 1], isHighlighted: false },
+      ]);
+      newChips.pop();
+      setChips(newChips);
+      setBkspCount(0);
+    }
+  }, [bkspCount]);
+
   return (
-    <main
-      className={`flex min-h-screen flex-col items-center justify-between p-24 ${inter.className}`}
-    >
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/pages/index.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
+    <>
+      <Head>
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <title>Zepto FE Assignment</title>
+      </Head>
+      <main>
+        <h1 className="text-[40px] text-center font-bold mt-12 mb-36">
+          Zepto FE Assignment
+        </h1>
+
+        <div className="flex justify-center">
+          <div className="flex border-slate-300  border-b-2 justify-center gap-2 p-2">
+            <ul className="flex gap-2 tag-list">
+              {chips.map((chip) => (
+                <li
+                  key={chip.id}
+                  className={`tag flex items-center gap-2 bg-slate-200 text-slate-600  pr-3 rounded-full ${
+                    chip.isHighlighted && "border-2 border-slate-400"
+                  }`}
+                >
+                  <img
+                    src={chip.image}
+                    className="h-10 w-10 p-1 rounded-full"
+                    alt=""
+                  />
+
+                  <span>{chip.name}</span>
+                  <span
+                    className=" cursor-pointer"
+                    onClick={(_) => {
+                      setRecommendations([...recommendations, chip]);
+                      const index = chips.indexOf(chip);
+                      let newChips = chips;
+                      newChips.splice(index, 1);
+                      setChips(newChips);
+                      setBkspCount(0);
+                    }}
+                  >
+                    <svg
+                      fill="#475569"
+                      height="12px"
+                      width="12px"
+                      version="1.1"
+                      id="Capa_1"
+                      xmlns="http://www.w3.org/2000/svg"
+                      xmlnsXlink="http://www.w3.org/1999/xlink"
+                      viewBox="0 0 490 490"
+                      xmlSpace="preserve"
+                    >
+                      <polygon
+                        points="
+                      456.851,0 245,212.564 33.149,0 0.708,32.337 212.669,245.004 0.708,457.678 33.149,490 245,277.443 456.851,490 
+	                    489.292,457.678 277.331,245.004 489.292,32.337 "
+                      />
+                    </svg>
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <input
+              className="outline-none text-slate-600"
+              type="text"
+              value={nameInput}
+              placeholder="Enter a name"
+              onChange={(e) => {
+                setNameInput(e.target.value);
+                setShowList(true);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Backspace" && !nameInput.length) {
+                  setBkspCount(bkspCount + 1);
+                } else if (
+                  e.key === "Enter" &&
+                  nameInput.length &&
+                  filteredRecommendations.length
+                ) {
+                  setChips([...chips, filteredRecommendations[0]]);
+                  const index = recommendations.indexOf(
+                    filteredRecommendations[0]
+                  );
+                  const newRec = recommendations;
+                  newRec.splice(index, 1);
+                  setRecommendations(newRec);
+                  setNameInput("");
+                  setShowList(false);
+                }
+              }}
             />
-          </a>
+          </div>
         </div>
-      </div>
+        {showList && nameInput?.length !== 0 && (
+          <div className=" flex justify-center">
+            <div className="list  shadow-lg mt-1 ">
+              <ul className=" w-80">
+                {filteredRecommendations.map((rec, index) => (
+                  <li
+                    key={rec.id}
+                    className={`flex items-center gap-2 cursor-pointer text-slate-600 py-1 px-3 mb-2 ${
+                      !index ? "bg-slate-300" : "bg-white"
+                    }`}
+                    onClick={() => {
+                      setChips([...chips, rec]);
+                      const index = recommendations.indexOf(rec);
+                      const newRec = recommendations;
+                      newRec.splice(index, 1);
+                      setRecommendations(newRec);
+                      setNameInput("");
+                      setShowList(false);
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={rec.image}
+                        className=" h-10  w-10 object-cover rounded-full"
+                        alt={rec.name}
+                      />
+                      <div>
+                        <p className="text-[16px]">{rec.name}</p>
+                        <p className="text-[12px]">{rec.catchphrase}</p>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+      </main>
+    </>
+  );
+};
 
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700/10 after:dark:from-sky-900 after:dark:via-[#0141ff]/40 before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Discover and deploy boilerplate example Next.js&nbsp;projects.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
-  )
-}
+export default Home;
