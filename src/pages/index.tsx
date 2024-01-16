@@ -1,17 +1,22 @@
 import Head from "next/head";
 import { Inter } from "next/font/google";
 import { useEffect, useState } from "react";
-import { recommendations } from "../types/recommendations";
+import { recommendation } from "../types/recommendations";
 import recommendationData from "../constants/constants";
 const inter = Inter({ subsets: ["latin"] });
 
-const Home = () => {
+/**
+ * Renders the Home component.
+ *
+ * @returns {JSX.Element} The rendered Home component.
+ */
+const Home = (): JSX.Element => {
   const [showList, setShowList] = useState<boolean>(false);
   const [nameInput, setNameInput] = useState<string>("");
   const [bkspCount, setBkspCount] = useState<number>(0);
-  const [chips, setChips] = useState<recommendations[]>([]);
+  const [chips, setChips] = useState<recommendation[]>([]);
   const [recommendations, setRecommendations] =
-    useState<recommendations[]>(recommendationData);
+    useState<recommendation[]>(recommendationData);
 
   const filteredRecommendations = recommendations.filter((rec) =>
     rec.name.toLowerCase().includes(nameInput.toLowerCase())
@@ -38,11 +43,71 @@ const Home = () => {
     }
   }, [bkspCount]);
 
+  /**
+   * Handles the keydown event for the input.
+   *
+   * @param {React.KeyboardEvent<HTMLInputElement>} e - The keyboard event object.
+   * @return {void} No return value.
+   */
+  const handleInputKeydown = (
+    e: React.KeyboardEvent<HTMLInputElement>
+  ): void => {
+    if (e.key === "Backspace" && !nameInput.length) {
+      setBkspCount(bkspCount + 1);
+    } else if (
+      e.key === "Enter" &&
+      nameInput.length &&
+      filteredRecommendations.length
+    ) {
+      setChips([...chips, filteredRecommendations[0]]);
+      const index: number = recommendations.indexOf(filteredRecommendations[0]);
+      const newRec: recommendation[] = recommendations;
+      newRec.splice(index, 1);
+      setRecommendations(newRec);
+      setNameInput("");
+      setShowList(false);
+    }
+  };
+
+  /**
+   * Adds the given recommendation to the chips array, removes it from the recommendations array,
+   * clears the name input, and hides the recommendation list.
+   *
+   * @param {recommendation} rec - The recommendation to be added to the chips array.
+   */
+  const handleListItemClick = (rec: recommendation) => {
+    setChips([...chips, rec]);
+    const index: number = recommendations.indexOf(rec);
+    const newRec: recommendation[] = recommendations;
+    newRec.splice(index, 1);
+    setRecommendations(newRec);
+    setNameInput("");
+    setShowList(false);
+  };
+
+  /**
+   * Handles the removal of a chip.
+   *
+   * @param {recommendation} chip - The chip to be removed.
+   * @return {void} This function does not return a value.
+   */
+  const handleChipRemoval = (chip: recommendation): void => {
+    setRecommendations([...recommendations, chip]);
+    const index: number = chips.indexOf(chip);
+    let newChips: recommendation[] = chips;
+    newChips.splice(index, 1);
+    setChips(newChips);
+    setBkspCount(0);
+  };
   return (
     <>
       <Head>
-        <link rel="icon" href="/favicon.ico" sizes="any" />
-        <title>Zepto FE Assignment</title>
+        <link
+          rel="icon"
+          href="https://yt3.googleusercontent.com/GTLfQAfTG92vSe2IrcPojos1EuA2AtLwgFUfUKaz31iVqkYw2d7e1-HO5yCsDeLdBlb--ZD7bQ=s176-c-k-c0x00ffffff-no-rj"
+          sizes="any"
+        />
+        <title>Zepto Assignment | Prateek Jha</title>
       </Head>
       <main>
         <h1 className="text-[40px] text-center font-bold mt-12 mb-36">
@@ -55,26 +120,23 @@ const Home = () => {
               {chips.map((chip) => (
                 <li
                   key={chip.id}
-                  className={`tag flex items-center gap-2 bg-slate-200 text-slate-600  pr-3 rounded-full ${
-                    chip.isHighlighted && "border-2 border-slate-400"
+                  className={`tag flex items-center gap-2  text-slate-600  pr-3 rounded-full ${
+                    chip.isHighlighted
+                      ? "bg-slate-300 outline outline-2 outline-slate-400"
+                      : "bg-slate-200"
                   }`}
                 >
                   <img
                     src={chip.image}
-                    className="h-10 w-10 p-1 rounded-full"
-                    alt=""
+                    className="h-10 w-10 p-1 object-cover rounded-full"
+                    alt={chip.name}
                   />
 
                   <span>{chip.name}</span>
                   <span
-                    className=" cursor-pointer"
-                    onClick={(_) => {
-                      setRecommendations([...recommendations, chip]);
-                      const index = chips.indexOf(chip);
-                      let newChips = chips;
-                      newChips.splice(index, 1);
-                      setChips(newChips);
-                      setBkspCount(0);
+                    className="cursor-pointer"
+                    onClick={() => {
+                      handleChipRemoval(chip);
                     }}
                   >
                     <svg
@@ -108,31 +170,15 @@ const Home = () => {
                 setShowList(true);
               }}
               onKeyDown={(e) => {
-                if (e.key === "Backspace" && !nameInput.length) {
-                  setBkspCount(bkspCount + 1);
-                } else if (
-                  e.key === "Enter" &&
-                  nameInput.length &&
-                  filteredRecommendations.length
-                ) {
-                  setChips([...chips, filteredRecommendations[0]]);
-                  const index = recommendations.indexOf(
-                    filteredRecommendations[0]
-                  );
-                  const newRec = recommendations;
-                  newRec.splice(index, 1);
-                  setRecommendations(newRec);
-                  setNameInput("");
-                  setShowList(false);
-                }
+                handleInputKeydown(e);
               }}
             />
           </div>
         </div>
         {showList && nameInput?.length !== 0 && (
           <div className=" flex justify-center">
-            <div className="list  shadow-lg mt-1 ">
-              <ul className=" w-80">
+            <div className="list shadow-lg mt-1 ">
+              <ul className="w-96">
                 {filteredRecommendations.map((rec, index) => (
                   <li
                     key={rec.id}
@@ -140,19 +186,13 @@ const Home = () => {
                       !index ? "bg-slate-300" : "bg-white"
                     }`}
                     onClick={() => {
-                      setChips([...chips, rec]);
-                      const index = recommendations.indexOf(rec);
-                      const newRec = recommendations;
-                      newRec.splice(index, 1);
-                      setRecommendations(newRec);
-                      setNameInput("");
-                      setShowList(false);
+                      handleListItemClick(rec);
                     }}
                   >
                     <div className="flex items-center gap-3">
                       <img
                         src={rec.image}
-                        className=" h-10  w-10 object-cover rounded-full"
+                        className="h-10  w-10 object-cover rounded-full"
                         alt={rec.name}
                       />
                       <div>
